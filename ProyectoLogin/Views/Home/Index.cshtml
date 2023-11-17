@@ -1,0 +1,158 @@
+﻿@model IEnumerable<ProyectoLogin.Models.Usuario>
+
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<h1>Lista de Usuarios</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var usuario in Model)
+        {
+            <tr>
+                <td>@usuario.IdUsuario</td>
+                <td>@usuario.NombreUsuario</td>
+                <td>
+                    <!-- Botón que activa el modal de edición -->
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editUserModal-@usuario.IdUsuario">
+                        Editar
+                    </button>
+
+                    <!-- Botón que activa el modal de eliminación -->
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal-@usuario.IdUsuario">
+                        Eliminar
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Modales de edición para cada usuario -->
+@foreach (var usuario in Model)
+{
+    <div class="modal fade" id="editUserModal-@usuario.IdUsuario" tabindex="-1" aria-labelledby="editUserModalLabel-@usuario.IdUsuario" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form class="edit-user-form" data-userid="@usuario.IdUsuario" asp-action="Editar">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editUserModalLabel-@usuario.IdUsuario">Editar Usuario</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" asp-for="@usuario.IdUsuario" />
+                        <div class="mb-3">
+                            <label asp-for="@usuario.NombreUsuario" class="form-label"></label>
+                            <input asp-for="@usuario.NombreUsuario" class="form-control" />
+                        </div>
+                        <!-- Agrega aquí más campos si necesitas editar otros atributos del usuario -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modales de eliminación para cada usuario -->
+@foreach (var usuario in Model)
+{
+    <div class="modal fade" id="deleteUserModal-@usuario.IdUsuario" tabindex="-1" aria-labelledby="deleteUserModalLabel-@usuario.IdUsuario" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form class="delete-user-form" data-userid="@usuario.IdUsuario" asp-action="Eliminar" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteUserModalLabel-@usuario.IdUsuario">Confirmar Eliminación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" asp-for="@usuario.IdUsuario" />
+                        <p>¿Está seguro que desea eliminar al usuario @usuario.NombreUsuario?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Función para actualizar el usuario en la tabla después de la edición
+        function actualizarUsuarioEnTabla(id, nombre) {
+            var row = $('#usuario-' + id);
+            row.find('.usuario-nombre').text(nombre); // Asume que tienes una clase para el nombre en tu fila de tabla
+        }
+
+        // Función para eliminar la fila del usuario de la tabla después de la eliminación
+        function eliminarUsuarioDeTabla(id) {
+            $('#usuario-' + id).remove();
+        }
+
+        // Evento submit para editar
+        $(document).on('submit', '.edit-user-form', function (e) {
+            e.preventDefault();
+            var form = $(this);
+            var userId = form.data('userid'); // Asegúrate de que el formulario tenga un atributo 'data-userid' con la ID del usuario
+            $.ajax({
+                url: form.attr('action'),
+                type: 'POST',
+                data: form.serialize(),
+                success: function (response) {
+                    if (response.success) {
+                        actualizarUsuarioEnTabla(response.id, response.nombre);
+                        // Cierra el modal si estás usando uno para la edición
+                        $('#editUserModal-' + response.id).modal('hide');
+                    } else {
+                        // Manejar el error
+                        alert(response.message);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    // Manejar errores de AJAX aquí
+                    alert('Ocurrió un error al actualizar el usuario.');
+                }
+            });
+        });
+
+        // Evento submit para eliminar
+        $(document).on('submit', '.delete-user-form', function (e) {
+            e.preventDefault();
+            var form = $(this);
+            var userId = form.find('input[type="hidden"]').val(); // Captura el ID del usuario desde el campo oculto
+
+            $.ajax({
+                type: 'POST',
+                url: form.attr('action'),
+                data: { id: userId }, // Asegúrate de que este dato coincide con lo que el controlador espera
+                success: function (response) {
+                    if (response.success) {
+                        // Cierra el modal y actualiza la UI adecuadamente
+                        $('#deleteUserModal-' + userId).modal('hide');
+                        // Otras acciones como eliminar la fila de la tabla
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function () {
+                    alert('Error al enviar la solicitud.');
+                }
+            });
+        });
+    </script>
+}
