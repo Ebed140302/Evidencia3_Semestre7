@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using ProyectoLogin.Models; // Asegúrate de que tienes un modelo 'Usuario' adecuado
 using System.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace ProyectoLogin.Controllers
 {
@@ -25,6 +26,16 @@ namespace ProyectoLogin.Controllers
 
         public IActionResult Index()
         {
+            // Obtener el correo electrónico del usuario autenticado
+            string userEmail = User.FindFirstValue(ClaimTypes.Email);
+
+            // Redirigir al perfil del usuario si no es el correo específico
+            if (userEmail != "ebed.ml32@gmail.com")
+            {
+                return RedirectToAction("Perfil", "Usuario");
+            }
+
+            // Si es el correo específico, continúa con la lógica para cargar los usuarios
             List<Usuario> usuarios = new List<Usuario>();
             string connectionString = _configuration.GetConnectionString("cadenaSQL");
 
@@ -42,7 +53,7 @@ namespace ProyectoLogin.Controllers
                             {
                                 IdUsuario = Convert.ToInt32(dataReader["IdUsuario"]),
                                 NombreUsuario = Convert.ToString(dataReader["NombreUsuario"]),
-                                // Asume que tu modelo Usuario tiene estas propiedades
+                                // Suponiendo que tu modelo Usuario tiene estas propiedades
                             };
                             usuarios.Add(usuario);
                         }
@@ -128,5 +139,43 @@ namespace ProyectoLogin.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("IniciarSesion", "Inicio");
         }
+        [HttpGet]
+        public IActionResult GetUserFiles(int IdUsuario)
+        {
+            List<Archivo> archivos = new List<Archivo>();
+            string connectionString = _configuration.GetConnectionString("cadenaSQL");
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = "SELECT Id, Nombre, Tipo, Contenido, FechaCarga FROM dbo.Archivos WHERE IdUsuario = @IdUsuario";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@IdUsuario", IdUsuario);
+                    connection.Open();
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var archivo = new Archivo
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
+                                Tipo = reader.GetString(reader.GetOrdinal("Tipo")),
+                                Contenido = reader["Contenido"] as byte[], // Suponiendo que Contenido es un array de bytes
+                                FechaCarga = reader.GetDateTime(reader.GetOrdinal("FechaCarga")),
+                                IdUsuario = IdUsuario // Suponiendo que tienes esta propiedad en tu modelo
+                            };
+                            archivos.Add(archivo);
+                        }
+                    }
+                }
+            }
+
+            return Json(archivos);
+        }
+   
     }
+
+
 }
+

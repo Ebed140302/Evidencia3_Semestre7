@@ -1,0 +1,83 @@
+﻿@model UsuarioConArchivosViewModel
+
+@{
+    ViewData["Title"] = "Perfil de Usuario";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="display-4">Perfil de @Model.Usuario.NombreUsuario</h1>
+            <p class="lead">ID: @Model.Usuario.IdUsuario</p>
+            <p class="lead">Correo: @Model.Usuario.Correo</p>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <h2>Subir Archivo</h2>
+            <form asp-action="CargarArchivo" method="post" enctype="multipart/form-data">
+                <div class="input-group mb-3">
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="archivo" name="archivo" required>
+                        <label class="custom-file-label" for="archivo">Seleccione el archivo</label>
+                    </div>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-primary" type="submit">Subir</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.Archivos.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h3>Archivos Subidos</h3>
+                <table class="table table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th>Fecha de Carga</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var archivo in Model.Archivos)
+                        {
+                            <tr>
+                                <td>@archivo.Nombre</td>
+                                <td>@archivo.Tipo</td>
+                                <td>@archivo.FechaCarga.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    <a href="@Url.Action("Descargar", new { id = archivo.Id })" class="btn btn-sm btn-primary">Descargar</a>
+                                    <!-- Botón de eliminar, si es necesario -->
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info" role="alert">
+            No hay archivos subidos todavía.
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Scripts para mejorar la interactividad de la página, como mostrar el nombre del archivo seleccionado
+        $(document).ready(function () {
+            $('.custom-file-input').on('change', function () {
+                let fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').addClass("selected").html(fileName);
+            });
+        });
+    </script>
+}

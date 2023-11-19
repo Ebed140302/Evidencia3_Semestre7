@@ -12,4 +12,5 @@ public partial class Usuario
     public string? Correo { get; set; }
 
     public string? Clave { get; set; }
+    public ICollection<Archivo> Archivos { get; set; } = new List<Archivo>();
 }

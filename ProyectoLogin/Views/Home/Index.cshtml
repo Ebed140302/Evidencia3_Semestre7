@@ -30,7 +30,11 @@
                     <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal-@usuario.IdUsuario">
                         Eliminar
                     </button>
+                    <button type="button" class="btn btn-info" onclick="fetchUserFiles(@usuario.IdUsuario)">
+                        Ver Archivos
+                    </button>
                 </td>
+                
             </tr>
         }
     </tbody>
@@ -89,6 +93,25 @@
         </div>
     </div>
 }
+
+<!-- Modal para mostrar archivos de usuario -->
+<div class="modal fade" id="filesModal" tabindex="-1" aria-labelledby="filesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filesModalLabel">Archivos del Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- La lista de archivos se llenará dinámicamente con JavaScript -->
+                <ul id="filesList"></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -154,5 +177,66 @@
                 }
             });
         });
+      /*  function fetchUserFiles(IdUsuario) {
+            $.ajax({
+                type: 'GET',
+                url: '/Home/GetUserFiles',
+                data: { IdUsuario: IdUsuario },
+                success: function (archivos) {
+                    var filesList = $('#filesList');
+                    filesList.empty();
+
+                    archivos.forEach(function (archivo) {
+                        var nombre = archivo.nombre || 'No disponible'; // Asegúrate de que esto coincida con la respuesta del servidor
+                        var tipo = archivo.tipo || 'No disponible';
+                        var fechaCarga = archivo.fechaCarga ? new Date(archivo.fechaCarga) : 'No disponible';
+                        var fechaCargaFormatted = fechaCarga !== 'No disponible' ? fechaCarga.toLocaleDateString('es') + ' ' + fechaCarga.toLocaleTimeString('es') : fechaCarga;
+
+                        // Suponiendo que el ID del archivo se devuelva como parte de la respuesta y que tienes una ruta '/Home/DownloadFile/{id}' configurada en tu controlador
+                        var downloadUrl = `/Home/DownloadFile/${archivo.id}`; // Reemplaza 'archivo.id' con la propiedad correcta si es necesario
+
+                        var listItem = $('<li>').text(`Nombre: ${nombre}, Tipo: ${tipo}, Fecha de Carga: ${fechaCargaFormatted}`);
+                        var downloadButton = $(`<a href="${downloadUrl}" class="btn btn-primary" download>Descargar</a>`);
+
+                        listItem.append(downloadButton);
+                        filesList.append(listItem);
+                    });
+
+                    $('#filesModal').modal('show');
+                },
+                error: function (error) {
+                    console.error('Error al recuperar los archivos:', error);
+                    alert('Error al recuperar los archivos. Por favor, intente de nuevo.');
+                }
+            });
+        }*/
+        function fetchUserFiles(IdUsuario) {
+            $.ajax({
+                type: 'GET',
+                url: '/Home/GetUserFiles', // Asegúrate de que la URL es correcta
+                data: { IdUsuario: IdUsuario },
+                success: function (archivos) {
+                    var filesList = $('#filesList');
+                    filesList.empty(); // Limpia la lista antes de agregar nuevos elementos
+
+                    archivos.forEach(function (archivo) {
+                        // Asegúrate de que tienes un endpoint que te permita descargar el archivo por su ID
+                        var downloadUrl = `/Home/DownloadFile/${archivo.id}`; // Ajusta esto según tu implementación
+                        var listItem = $('<li>').html(`Nombre: ${archivo.nombre}, Tipo: ${archivo.tipo}, Fecha de Carga: ${archivo.fechaCargaFormatted} <a href="${downloadUrl}" class="btn btn-primary" download="${archivo.nombre}">Descargar</a>`);
+
+                        filesList.append(listItem);
+                    });
+
+                    // Muestra el modal con los archivos
+                    $('#filesModal').modal('show');
+                },
+                error: function (error) {
+                    console.error('Error al recuperar los archivos:', error);
+                    alert('Error al recuperar los archivos. Por favor, intente de nuevo.');
+                }
+            });
+        }
+
+
     </script>
 }

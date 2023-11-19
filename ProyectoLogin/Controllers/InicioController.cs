@@ -45,31 +45,27 @@ namespace ProyectoLogin.Controllers
         [HttpPost]
         public async Task<IActionResult> IniciarSesion(string correo, string clave)
         {
-
             Usuario usuario_encontrado = await _usuarioServicio.GetUsuario(correo, Utilidades.EncriptarClave(clave));
 
-            if (usuario_encontrado == null) {
-                ViewData["Mensaje"] = "No se encontraron coincidencias";
-                return View();
+            if (usuario_encontrado != null)
+            {
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, usuario_encontrado.NombreUsuario),
+                    new Claim(ClaimTypes.Email, correo)
+                };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties { AllowRefresh = true };
+
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
+
+                // Redirige a Index si es el correo específico, de lo contrario al perfil
+                return correo == "ebed.ml32@gmail.com" ? RedirectToAction("Index", "Home") : RedirectToAction("Perfil", "Usuario");
             }
 
-            List<Claim> claims = new List<Claim>() {
-                new Claim(ClaimTypes.Name, usuario_encontrado.NombreUsuario)
-            };
-
-            ClaimsIdentity claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            AuthenticationProperties properties = new AuthenticationProperties()
-            {
-                AllowRefresh= true
-            };
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity),
-                properties
-                );
-
-            return RedirectToAction("Index", "Home");
+            ViewData["Mensaje"] = "No se encontraron coincidencias";
+            return View();
         }
     }
 }
